@@ -20,12 +20,28 @@ import RadioGroup from '@material-ui/core/RadioGroup';
 import FormControlLabel from '@material-ui/core/FormControlLabel';
 import FormControl from '@material-ui/core/FormControl';
 
+
+import Table from '@material-ui/core/Table';
+import TableBody from '@material-ui/core/TableBody';
+import TableCell from '@material-ui/core/TableCell';
+import TableContainer from '@material-ui/core/TableContainer';
+import TableHead from '@material-ui/core/TableHead';
+import TableRow from '@material-ui/core/TableRow';
+
+
 import CheckBalance from './CheckBalance';
 import ReadTextFromFile from '../utils/File';
 
 function getSteps() {
   return ['Your details', 'Transaction details', 'Output details'];
 }
+
+const defaultOutputDetails = {
+  publicKey: null,
+  alias: "",
+  queryMethod: "alias",
+  amount: 1,
+};
 
 const useStyles = makeStyles((theme) => ({
   paper: {
@@ -158,6 +174,134 @@ function TransactionDetails(props) {
   );
 }
 
+function OutputDetailsRow(props) {
+  /*
+  props = {
+    updateDetails: function
+    currentDetails:
+    index:
+  }
+  */
+  const classes = useStyles();
+
+  const [queryMethod, setQueryMethod] = useState(props.currentDetails.queryMethod);
+  const [publicKey, setPublicKey] = useState(props.currentDetails.publicKey);
+  const [alias, setAlias] = useState(props.currentDetails.alias);
+  const [amount, setAmount] = useState(props.currentDetails.amount);
+
+  const newPublicKeyChosen = e => {
+    var reader = new FileReader();
+    reader.onload = function(){
+      var text = reader.result;
+      setPublicKey(text);
+    };
+    reader.readAsText(e.target.files[0]);
+  }
+
+  const handleQueryMethodChange = e => setQueryMethod(e.target.value);
+  const handleAliasChange = e => setAlias(e.target.value);
+  const handleAmountChange = e => setAmount(parseInt(e.target.value));
+
+  const informParent = () => {
+    props.updateDetails(
+      props.index,
+      {
+        alias: alias,
+        queryMethod: queryMethod,
+        publicKey: publicKey,
+        amount: amount,
+      }
+    );
+  }
+  React.useEffect(informParent, [queryMethod, publicKey, alias, amount]);
+
+  return (
+    <TableRow key={props.roll}>
+      <TableCell component="th" scope="row">
+        {props.index}
+      </TableCell>
+      <TableCell align="center">
+        <FormControl component="fieldset">
+          <RadioGroup aria-label="method" name="method" value={queryMethod} onChange={handleQueryMethodChange}>
+            <FormControlLabel value="alias" control={<Radio />} label="Alias" />
+            <FormControlLabel value="publicKey" control={<Radio />} label="Public Key" />
+          </RadioGroup>
+        </FormControl>
+      </TableCell>
+      <TableCell align="center">
+        {queryMethod==="alias" &&
+          <TextField variant="outlined" required label="Alias" name="alias" autoComplete="username"
+            value={alias} onChange={handleAliasChange}/>
+        }
+        {queryMethod==="publicKey" &&
+          <Grid container className={classes.mainContainer} spacing={2} direction="column" >
+            <Grid item>
+              <input accept="*" className={classes.input} id={"tc-recipient-pubkey-"+props.index}
+                type="file" onChange={newPublicKeyChosen}/>
+              <label htmlFor={"tc-recipient-pubkey-"+props.index}>
+                <Button variant="contained" color="primary" component="span">
+                  Choose Public Key
+                </Button>
+              </label>
+            </Grid>
+            <Grid item>
+              {publicKey && 
+                <TextField id="outlined-basic" label="Public Key" variant="outlined" 
+                  disabled fullWidth multiline value={publicKey.substring(0,100)+"..."}/>
+                }
+            </Grid>
+          </Grid>
+        }
+      </TableCell>
+      <TableCell align="center">
+        <TextField type="number"
+          InputProps={{ inputProps: { min: 1 } }}
+          label="Amount"
+          value={amount}
+          onChange={handleAmountChange}
+        />
+      </TableCell>
+    </TableRow>
+  );
+}
+
+function OutputDetails(props) {
+  /*
+  props = {
+    numOutputs:
+    outputDetails:
+    setOutputDetails:
+  }
+  */
+  
+  const updateDetails = (index, newDetails) => {
+    let copyOfDetails = props.outputDetails;
+    copyOfDetails[index] = newDetails;
+    props.setOutputDetails(copyOfDetails);
+  }
+  
+  return (
+    <TableContainer>
+      <Table aria-label="Details of outputs">
+        <TableHead>
+          <TableRow>
+            <TableCell align="center">Index</TableCell>
+            <TableCell align="center">Recipient Identifier</TableCell>
+            <TableCell align="center">Identifier Value</TableCell>
+            <TableCell align="center">Amount</TableCell>
+          </TableRow>
+        </TableHead>
+        <TableBody>
+          {props.outputDetails.map((output, index) =>
+            <OutputDetailsRow updateDetails={updateDetails}
+              currentDetails={output} key={index} index={index}/>
+          )}
+        </TableBody>
+      </Table>
+    </TableContainer>
+  );
+}
+
 export default function TransferCoins(props) {
   const classes = useStyles();
 
@@ -171,6 +315,8 @@ export default function TransferCoins(props) {
   const [numOutputs, setNumOutputs] = React.useState(1);
   const [transactionFees, setTransactionFees] = React.useState(100);
 
+  const [outputDetails, setOutputDetails] = React.useState(new Array(numOutputs).fill().map(output => defaultOutputDetails));
+
   const onNumOutputsChange = e => setNumOutputs(parseInt(e.target.value));
   const onTransactionFeesChange = e => setTransactionFees(parseInt(e.target.value));
 
@@ -181,6 +327,7 @@ export default function TransferCoins(props) {
   });
 
   const verifyStep = step => {
+    return true;
     if(step===0){
       if(!publicKey){
         setErrorMessage("You have not chosen a public key");
@@ -206,6 +353,9 @@ export default function TransferCoins(props) {
   }
 
   const handleNext = () => {
+    if(activeStep==3){
+      console.log(outputDetails);
+    }
     if(verifyStep(activeStep)){
       setTCStatus({display:false})
       setActiveStep((prevActiveStep) => prevActiveStep + 1);
@@ -242,6 +392,10 @@ export default function TransferCoins(props) {
                   transactionFees={transactionFees} 
                   onNumOutputsChange={onNumOutputsChange}
                   onTransactionFeesChange={onTransactionFeesChange}/>
+              }
+              {index===2 &&
+                <OutputDetails numOutputs={numOutputs} 
+                  outputDetails={outputDetails} setOutputDetails={setOutputDetails}/>
               }
               <div className={classes.actionsContainer}>
                 <div>
