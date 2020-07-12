@@ -315,10 +315,17 @@ export default function TransferCoins(props) {
   const [numOutputs, setNumOutputs] = React.useState(1);
   const [transactionFees, setTransactionFees] = React.useState(100);
 
-  const [outputDetails, setOutputDetails] = React.useState(new Array(numOutputs).fill().map(output => defaultOutputDetails));
+  const [outputDetails, setOutputDetails] = React.useState(new Array(numOutputs? numOutputs:1).fill().map(output => defaultOutputDetails));
 
   const onNumOutputsChange = e => setNumOutputs(parseInt(e.target.value));
   const onTransactionFeesChange = e => setTransactionFees(parseInt(e.target.value));
+
+  const resizeOutputDetails = () => {
+    if(numOutputs){
+      setOutputDetails(new Array(numOutputs).fill().map(output => defaultOutputDetails));
+    }
+  }
+  React.useEffect(resizeOutputDetails, [numOutputs]);
 
   const setErrorMessage = err => setTCStatus({
     display: true,
@@ -327,8 +334,8 @@ export default function TransferCoins(props) {
   });
 
   const verifyStep = step => {
-    return true;
     if(step===0){
+      return true;
       if(!publicKey){
         setErrorMessage("You have not chosen a public key");
         return false;
@@ -337,7 +344,6 @@ export default function TransferCoins(props) {
         setErrorMessage("You have not chosen a private key");
         return false;
       }
-      return true;
     }else if(step===1){
       if(!numOutputs || numOutputs<=0){
         setErrorMessage("Choose a valid number of outputs");
@@ -347,13 +353,28 @@ export default function TransferCoins(props) {
         setErrorMessage("Choose a valid transaction fee");
         return false;
       }
-      return true;
+    }else if(step==2){
+      for(let i=0; i<numOutputs; i++){
+        let output = outputDetails[i];
+        if(!output.amount || output.amount<=0){
+          setErrorMessage("Choose a valid amount for output at index "+i);
+          return false;
+        }
+        if(output.queryMethod=="alias" && !output.alias){
+          setErrorMessage("Enter a valid alias for output at index "+i);
+          return false;
+        }
+        if(output.queryMethod=="publicKey" && !output.publicKey){
+          setErrorMessage("CHoose a valid public key for output at index "+i);
+          return false;
+        }
+      }
     }
     return true;
   }
 
   const handleNext = () => {
-    if(activeStep==3){
+    if(activeStep==2){
       console.log(outputDetails);
     }
     if(verifyStep(activeStep)){
@@ -419,7 +440,7 @@ export default function TransferCoins(props) {
         <Paper square elevation={0} className={classes.resetContainer}>
           <Typography>All steps completed - you&apos;re finished</Typography>
           <Button onClick={handleReset} className={classes.button}>
-            Reset
+            Make another transaction
           </Button>
         </Paper>
       )}
