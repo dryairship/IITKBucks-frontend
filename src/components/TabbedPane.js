@@ -1,15 +1,16 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import { makeStyles } from '@material-ui/core/styles';
 import AppBar from '@material-ui/core/AppBar';
 import Tabs from '@material-ui/core/Tabs';
 import Tab from '@material-ui/core/Tab';
+import Grid from '@material-ui/core/Grid';
 import Typography from '@material-ui/core/Typography';
 import Box from '@material-ui/core/Box';
 
 import CheckBalance from './CheckBalance';
 import CreateAccount from './CreateAccount';
 import TransferCoins from './TransferCoins';
+import AddAlias from './AddAlias';
 
 function TabPanel(props) {
   const { children, value, index, ...other } = props;
@@ -23,7 +24,7 @@ function TabPanel(props) {
       {...other}
     >
       {value === index && (
-        <Box p={3}>
+        <Box p={4}>
           <Typography component={'span'}>{children}</Typography>
         </Box>
       )}
@@ -44,14 +45,7 @@ function a11yProps(index) {
   };
 }
 
-const useStyles = makeStyles((theme) => ({
-  root: {
-    flexGrow: 1,
-  },
-}));
-
 export default function TabbedPane(props) {
-  const classes = useStyles();
   const [value, setValue] = React.useState(0);
 
   const handleChange = (event, newValue) => {
@@ -59,23 +53,29 @@ export default function TabbedPane(props) {
   };
 
   return (
-    <div className={classes.root}>
-      <AppBar position="static">
-        <Tabs value={value} onChange={handleChange}>
-          <Tab label="Check Balance" {...a11yProps(0)} />
-          <Tab label="Create Account" {...a11yProps(1)} />
-          <Tab label="Transfer Coins" {...a11yProps(2)} />
-        </Tabs>
-      </AppBar>
-      <TabPanel value={value} index={0}>
+    <Grid container direction="column" justify="center" alignItems="center">
+      <Grid item>
+        <AppBar position="static">
+          <Tabs value={value} onChange={handleChange}>
+            <Tab label="Check Balance" {...a11yProps(0)} />
+            <Tab label="Create Account" {...a11yProps(1)} />
+            <Tab label="Transfer Coins" {...a11yProps(2)} />
+            <Tab label="Add An Alias" {...a11yProps(3)} />
+          </Tabs>
+        </AppBar>
+      </Grid>
+      <Grid item><TabPanel value={value} index={0}>
         <CheckBalance />
-      </TabPanel>
-      <TabPanel value={value} index={1}>
+      </TabPanel></Grid>
+      <Grid item><TabPanel value={value} index={1}>
         <CreateAccount />
-      </TabPanel>
-      <TabPanel value={value} index={2}>
+      </TabPanel></Grid>
+      <Grid item><TabPanel value={value} index={2}>
         <TransferCoins />
-      </TabPanel>
-    </div>
+      </TabPanel></Grid>
+      <Grid item><TabPanel value={value} index={3}>
+        <AddAlias />
+      </TabPanel></Grid>
+    </Grid>
   );
 }
