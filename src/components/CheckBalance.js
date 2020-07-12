@@ -12,6 +12,8 @@ import RadioGroup from '@material-ui/core/RadioGroup';
 import FormControlLabel from '@material-ui/core/FormControlLabel';
 import FormControl from '@material-ui/core/FormControl';
 
+import { GetBalanceForAlias, GetBalanceForPublicKey  } from '../utils/Balance';
+
 const useStyles = makeStyles((theme) => ({
   input: {
     display: 'none',
@@ -28,12 +30,17 @@ export default function CheckBalance(props) {
   const [cbStatus, setCBStatus] = useState({});
   const [queryMethod, setQueryMethod] = useState("alias");
   const [publicKey, setPublicKey] = useState(null);
-  const [unusedOutputs, setUnusedOutputs] = useState(null);
 
   const setErrorMessage = err => setCBStatus({
     display: true,
     severity: "error",
     message: err,
+  });
+
+  const showBalance = balance => setCBStatus({
+    display: true,
+    severity: "success",
+    message: "Your balance is "+ balance,
   });
 
   const newPublicKeyChosen = e => {
@@ -48,34 +55,24 @@ export default function CheckBalance(props) {
   const handleQueryMethodChange = e => setQueryMethod(e.target.value);
 
   const onSubmitClick = () => {
-    let data = {};
     if(queryMethod==="alias"){
       let alias = document.getElementById("cb-alias").value;
       if(alias===""){
         setErrorMessage("Enter a valid alias.");
         return;
       }
-      data = {alias: alias};
+      GetBalanceForAlias(alias)
+      .then(balance => showBalance(balance))
+      .catch(err => setErrorMessage(err));
     }else{
       if(!publicKey){
         setErrorMessage("Choose a public key file.");
         return;
       }
-      data = {publicKey: publicKey};
+      GetBalanceForPublicKey(publicKey)
+      .then(balance => showBalance(balance))
+      .catch(err => setErrorMessage(err));
     }
-    fetch("/getUnusedOutputs", {
-      method: "POST",
-      body: JSON.stringify(data),
-    })
-    .then(res => {
-      if(res.status !== 200){
-        setErrorMessage("Could not get balance.");
-        return null;
-      }
-      return res.json();
-    })
-    .then(data => setUnusedOutputs(data))
-    .catch(err => setErrorMessage(err));
   }
 
   return (

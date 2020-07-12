@@ -1,4 +1,4 @@
-const forge = require("node-forge");
+import forge from 'node-forge';
 
 export default function GenerateDownloadableKeys() {
     return new Promise((resolve, reject) => 
