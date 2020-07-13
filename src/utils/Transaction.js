@@ -85,7 +85,7 @@ export default function MakeTransactionRequestBody(data) {
     return value = {
         "inputs": [
             {
-                "transactionID": "<hex representation of the transaction ID of this input>",
+                "transactionId": "<hex representation of the transaction ID of this input>",
                 "index": <index of this input in the list of outputs of the transaction>,
                 "signature": "<hex representation of the signature for this input>"
             },
@@ -138,7 +138,6 @@ export default function MakeTransactionRequestBody(data) {
         .then(_ => {
             for(let i=0; i<inputs.length; i++){
                 delete inputs[i].amount;
-                inputs[i].transactionID = inputs[i].transactionId;
                 inputs[i].signature = Sign(GetSigningData(inputs[i], outputHash), data.privateKey);
             }
             resolve({
