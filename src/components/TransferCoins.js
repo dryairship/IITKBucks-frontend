@@ -29,8 +29,10 @@ import TableHead from '@material-ui/core/TableHead';
 import TableRow from '@material-ui/core/TableRow';
 
 
-import CheckBalance from './CheckBalance';
+import {GetBalanceFromOutputs} from '../utils/Balance';
+import {GetUnusedOutputsForPublicKey} from '../utils/UnusedOutputs';
 import ReadTextFromFile from '../utils/File';
+import MakeTransactionRequest from '../utils/Transaction';
 
 function getSteps() {
   return ['Your details', 'Transaction details', 'Output details'];
@@ -144,6 +146,7 @@ function UserDetails(props) {
 function TransactionDetails(props) {
   /*
   props = {
+    balance:
     numOutputs:
     transactionFees:
     onNumOutputsChange: function
@@ -154,6 +157,13 @@ function TransactionDetails(props) {
 
   return (
     <Grid container className={classes.mainContainer} spacing={2} direction="column" >
+      <Grid item>
+        <TextField type="number"
+          disabled
+          label="Balance"
+          value={props.balance}
+        />
+      </Grid>
       <Grid item>
         <TextField type="number"
           InputProps={{ inputProps: { min: 1 } }}
@@ -317,6 +327,9 @@ export default function TransferCoins(props) {
 
   const [outputDetails, setOutputDetails] = React.useState(new Array(numOutputs? numOutputs:1).fill().map(output => defaultOutputDetails));
 
+  const [unusedOutputs, setUnusedOutputs] = React.useState([]);
+  const [balance, setBalance] = React.useState(0);
+
   const onNumOutputsChange = e => setNumOutputs(parseInt(e.target.value));
   const onTransactionFeesChange = e => setTransactionFees(parseInt(e.target.value));
 
@@ -330,12 +343,11 @@ export default function TransferCoins(props) {
   const setErrorMessage = err => setTCStatus({
     display: true,
     severity: "error",
-    message: err,
+    message: err.toString(),
   });
 
   const verifyStep = step => {
     if(step===0){
-      return true;
       if(!publicKey){
         setErrorMessage("You have not chosen a public key");
         return false;
@@ -353,18 +365,18 @@ export default function TransferCoins(props) {
         setErrorMessage("Choose a valid transaction fee");
         return false;
       }
-    }else if(step==2){
+    }else if(step===2){
       for(let i=0; i<numOutputs; i++){
         let output = outputDetails[i];
         if(!output.amount || output.amount<=0){
           setErrorMessage("Choose a valid amount for output at index "+i);
           return false;
         }
-        if(output.queryMethod=="alias" && !output.alias){
+        if(output.queryMethod==="alias" && !output.alias){
           setErrorMessage("Enter a valid alias for output at index "+i);
           return false;
         }
-        if(output.queryMethod=="publicKey" && !output.publicKey){
+        if(output.queryMethod==="publicKey" && !output.publicKey){
           setErrorMessage("CHoose a valid public key for output at index "+i);
           return false;
         }
@@ -374,14 +386,53 @@ export default function TransferCoins(props) {
   }
 
   const handleNext = () => {
-    if(activeStep==2){
-      console.log(outputDetails);
-    }
     if(verifyStep(activeStep)){
-      setTCStatus({display:false})
+      setTCStatus({display:false});
       setActiveStep((prevActiveStep) => prevActiveStep + 1);
+
+      if(activeStep===0){
+        let oldStep = activeStep;
+        GetUnusedOutputsForPublicKey(publicKey)
+        .then(outputs => {
+          setUnusedOutputs(outputs);
+          setBalance(GetBalanceFromOutputs(outputs));
+        })
+        .catch(err => {
+          setErrorMessage(err)
+          setActiveStep(oldStep);
+        });
+      }
+      if(activeStep===2){
+        makeTransaction();
+      }
     }
   };
+
+  const makeTransaction = () => {
+    MakeTransactionRequest({
+      publicKey: publicKey,
+      privateKey: privateKey,
+      unusedOutputs: unusedOutputs,
+      transactionFees: transactionFees,
+      outputDetails: outputDetails,
+    }).then(data => fetch("/newTransaction", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }))
+    .then(res => {
+      if(res.status === 200){
+        setTCStatus({
+          display: true,
+          severity: "success",
+          message: "Transaction successfully added. Wait for some time for it to get included in a block.",
+        });
+      } else {
+        setErrorMessage("Could not make transaction.");
+        setActiveStep(2);
+      }
+    })
+    .catch(err => setErrorMessage(err));
+  }
 
   const handleBack = () => {
     setActiveStep((prevActiveStep) => prevActiveStep - 1);
@@ -409,6 +460,7 @@ export default function TransferCoins(props) {
               }
               {index===1 &&
                 <TransactionDetails
+                  balance={balance}
                   numOutputs={numOutputs}
                   transactionFees={transactionFees} 
                   onNumOutputsChange={onNumOutputsChange}
@@ -438,7 +490,6 @@ export default function TransferCoins(props) {
       </Stepper>
       {activeStep === steps.length && (
         <Paper square elevation={0} className={classes.resetContainer}>
-          <Typography>All steps completed - you&apos;re finished</Typography>
           <Button onClick={handleReset} className={classes.button}>
             Make another transaction
           </Button>
