@@ -50,7 +50,10 @@ function GetRawInputs(data){
         if(inputAmount<totalOutputAmount)
             reject("Not enough balance to make transactions.");
         
-        resolve(inputs);
+        resolve({
+            inputs: inputs,
+            backToSelf: inputAmount-totalOutputAmount,
+        });
     });
 }
 
@@ -107,10 +110,19 @@ export default function MakeTransactionRequestBody(data) {
         }
         let outputs = [];
         let outputHash = null;
+        let inputs = [];
         Promise.all(todo) // Fetch the publicKeys of all aliases
         .then(results => { // assign publicKeys to all output objects
             results.forEach(result => {
                 data.outputDetails[result.index].publicKey = result.key;
+            });
+        })
+        .then(_ => GetRawInputs(data))
+        .then(rawInputData => {
+            inputs = rawInputData.inputs;
+            outputs.push({
+                amount: rawInputData.backToSelf,
+                recipient: data.publicKey,
             });
         })
         .then(_ => { // Create output objects in the desirable format
@@ -123,8 +135,7 @@ export default function MakeTransactionRequestBody(data) {
             return GetOutputHash(outputs);
         })
         .then(hash => outputHash = hash) // set output hash
-        .then(_ => GetRawInputs(data))
-        .then(inputs => {
+        .then(_ => {
             for(let i=0; i<inputs.length; i++){
                 delete inputs[i].amount;
                 inputs[i].transactionID = inputs[i].transactionId;
