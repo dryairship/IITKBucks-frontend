@@ -8,6 +8,10 @@ export function ConvertHexStringToByteArray(hex) {
     return new Uint8Array(hex.match(/.{1,2}/g).map(byte => parseInt(byte, 16)));
 }
 
+export function ConvertByteArrayToHexString(bytes) {
+    return forge.util.bytesToHex(bytes);
+}
+
 export function ConvertInt32ToByteArray (num) {
     let arr = new ArrayBuffer(4); 
     let view = new DataView(arr);

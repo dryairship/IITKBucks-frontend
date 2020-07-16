@@ -1,8 +1,5 @@
 import forge from 'node-forge';
-
-function ConvertByteArrayToHexString(bytes) {
-    return forge.util.bytesToHex(bytes);
-}
+import { ConvertByteArrayToHexString } from './Convertors';
 
 export function SignDataLocallyWithPrivateKey(data, key) {
     let privateKey = forge.pki.privateKeyFromPem(key);
