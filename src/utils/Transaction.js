@@ -4,7 +4,9 @@ import Sign from './Signature';
 /* global BigInt */
 
 function GetOutputHash(outputs) {
-    return new Uint8Array(crypto.subtle.digest('SHA-256', ConvertOutputsToByteArray(outputs)));
+    return new Promise((resolve, _) => crypto.subtle
+        .digest('SHA-256', ConvertOutputsToByteArray(outputs))
+        .then(hash => resolve(new Uint8Array(hash))));
 }
 
 function GetSigningData(input, outputHash) {
