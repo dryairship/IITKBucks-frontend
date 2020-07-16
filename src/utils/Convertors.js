@@ -1,5 +1,7 @@
 import forge from 'node-forge';
 
+/* global BigInt */
+
 export function ConvertStringToByteArray(str) {
     return new TextEncoder().encode(str);
 }
@@ -29,7 +31,7 @@ export function ConvertInt64ToByteArray(num) {
 }
 
 export function ConvertOutputToByteArray(output) {
-    let part1 = ConvertInt64ToByteArray(output.amount);
+    let part1 = ConvertInt64ToByteArray(BigInt(output.amount));
     let part3 = ConvertStringToByteArray(output.recipient);
     let part2 = ConvertInt32ToByteArray(part3.length);
     let ans = new Uint8Array(12+part3.length);

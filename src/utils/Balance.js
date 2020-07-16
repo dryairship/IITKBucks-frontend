@@ -1,9 +1,11 @@
 import { GetUnusedOutputsForAlias, GetUnusedOutputsForPublicKey  } from './UnusedOutputs';
 
+/* global BigInt */
+
 export function GetBalanceFromOutputs(outputs) {
-    let total = 0;
+    let total = 0n;
     outputs.forEach(output => {
-        total += output.amount;
+        total += BigInt(output.amount);
     });
     return total;
 }

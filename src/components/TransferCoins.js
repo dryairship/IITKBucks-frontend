@@ -157,7 +157,7 @@ function TransactionDetails(props) {
         <TextField type="number"
           disabled
           label="Balance"
-          value={props.balance}
+          value={props.balance.toString()}
         />
       </Grid>
       <Grid item>

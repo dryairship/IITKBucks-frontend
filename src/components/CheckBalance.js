@@ -37,7 +37,7 @@ export default function CheckBalance(props) {
   const showBalance = balance => setCBStatus({
     display: true,
     severity: "success",
-    message: "Your balance is "+ balance,
+    message: "Your balance is "+ balance.toString(),
   });
 
   const newPublicKeyChosen = e => {
