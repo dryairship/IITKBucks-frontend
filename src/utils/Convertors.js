@@ -22,8 +22,8 @@ export function ConvertInt32ToByteArray (num) {
 export function ConvertInt64ToByteArray(num) {
     let arr = new Uint8Array(8);
     for (let i = 0; i < 8; i++) {
-        arr[7-i] = parseInt(num%256);
-        num = num/256;
+        arr[7-i] = parseInt(num%256n);
+        num = num/256n;
     }
     return arr;
 }

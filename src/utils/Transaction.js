@@ -1,6 +1,8 @@
 import {ConvertOutputsToByteArray, ConvertInputToByteArray} from './Convertors';
 import Sign from './Signature';
 
+/* global BigInt */
+
 function GetOutputHash(outputs) {
     return new Uint8Array(crypto.subtle.digest('SHA-256', ConvertOutputsToByteArray(outputs)));
 }
@@ -35,13 +37,13 @@ function GetPublicKeyOfAlias(index, alias) {
 
 function GetRawInputs(data){
     return new Promise((resolve, reject) => {
-        let totalOutputAmount = data.transactionFees;
-        data.outputDetails.map(output => totalOutputAmount+=output.amount);
+        let totalOutputAmount = BigInt(data.transactionFees);
+        data.outputDetails.map(output => totalOutputAmount+=BigInt(output.amount));
 
         let inputs = [];
-        let inputAmount = 0;
+        let inputAmount = 0n;
         for(let i=0; i<data.unusedOutputs.length; i++){
-            inputAmount += data.unusedOutputs[i].amount;
+            inputAmount += BigInt(data.unusedOutputs[i].amount);
             inputs.push(data.unusedOutputs[i]);
             if(inputAmount>=totalOutputAmount)
                 break;
@@ -128,7 +130,7 @@ export default function MakeTransactionRequestBody(data) {
         .then(_ => { // Create output objects in the desirable format
             data.outputDetails.forEach(output => {
                 outputs.push({
-                    amount: output.amount,
+                    amount: BigInt(output.amount),
                     recipient: output.publicKey,
                 });
             });

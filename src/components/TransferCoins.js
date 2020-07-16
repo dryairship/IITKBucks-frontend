@@ -20,11 +20,15 @@ import TableContainer from '@material-ui/core/TableContainer';
 import TableHead from '@material-ui/core/TableHead';
 import TableRow from '@material-ui/core/TableRow';
 
-
 import {GetBalanceFromOutputs} from '../utils/Balance';
 import {GetUnusedOutputsForPublicKey} from '../utils/UnusedOutputs';
 import ReadTextFromFile from '../utils/File';
 import MakeTransactionRequest from '../utils/Transaction';
+
+// Why do need to do all this to use BigInt? 
+/* global BigInt */
+// eslint-disable-next-line no-extend-native
+BigInt.prototype.toJSON = function() { return this.toString(); };
 
 function getSteps() {
   return ['Your details', 'Transaction details', 'Output details'];
@@ -34,7 +38,7 @@ const defaultOutputDetails = {
   publicKey: null,
   alias: "",
   queryMethod: "alias",
-  amount: 1,
+  amount: "1",
 };
 
 const useStyles = makeStyles((theme) => ({
@@ -190,6 +194,7 @@ function OutputDetailsRow(props) {
   const [publicKey, setPublicKey] = useState(props.currentDetails.publicKey);
   const [alias, setAlias] = useState(props.currentDetails.alias);
   const [amount, setAmount] = useState(props.currentDetails.amount);
+  // amount is a string throughout in this container
 
   const newPublicKeyChosen = e => {
     var reader = new FileReader();
@@ -202,7 +207,7 @@ function OutputDetailsRow(props) {
 
   const handleQueryMethodChange = e => setQueryMethod(e.target.value);
   const handleAliasChange = e => setAlias(e.target.value);
-  const handleAmountChange = e => setAmount(parseInt(e.target.value));
+  const handleAmountChange = e => setAmount(e.target.value);
 
   const informParent = () => {
     props.updateDetails(
@@ -315,7 +320,7 @@ export default function TransferCoins(props) {
   const [privateKey, setPrivateKey] = React.useState(null);
 
   const [numOutputs, setNumOutputs] = React.useState(1);
-  const [transactionFees, setTransactionFees] = React.useState(100);
+  const [transactionFees, setTransactionFees] = React.useState("100");
 
   const [outputDetails, setOutputDetails] = React.useState(new Array(numOutputs? numOutputs:1).fill().map(output => defaultOutputDetails));
 
@@ -323,7 +328,7 @@ export default function TransferCoins(props) {
   const [balance, setBalance] = React.useState(0);
 
   const onNumOutputsChange = e => setNumOutputs(parseInt(e.target.value));
-  const onTransactionFeesChange = e => setTransactionFees(parseInt(e.target.value));
+  const onTransactionFeesChange = e => setTransactionFees(e.target.value);
 
   const resizeOutputDetails = () => {
     if(numOutputs){
@@ -353,14 +358,14 @@ export default function TransferCoins(props) {
         setErrorMessage("Choose a valid number of outputs");
         return false;
       }
-      if(!transactionFees || transactionFees<=0){
+      if(!parseInt(transactionFees) || parseInt(transactionFees)<=0){
         setErrorMessage("Choose a valid transaction fee");
         return false;
       }
     }else if(step===2){
       for(let i=0; i<numOutputs; i++){
         let output = outputDetails[i];
-        if(!output.amount || output.amount<=0){
+        if(!parseInt(output.amount) || parseInt(output.amount)<=0){
           setErrorMessage("Choose a valid amount for output at index "+i);
           return false;
         }
