@@ -136,9 +136,13 @@ export default function MakeTransactionRequestBody(data) {
         })
         .then(hash => outputHash = hash) // set output hash
         .then(_ => {
+            let signaturePromises = inputs.map(input => Sign(GetSigningData(input, outputHash), data.privateKey));
+            return Promise.all(signaturePromises);
+        })
+        .then(signatures => {
             for(let i=0; i<inputs.length; i++){
                 delete inputs[i].amount;
-                inputs[i].signature = Sign(GetSigningData(inputs[i], outputHash), data.privateKey);
+                inputs[i].signature = signatures[i];
             }
             resolve({
                 inputs: inputs,

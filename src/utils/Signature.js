@@ -1,6 +1,10 @@
 import forge from 'node-forge';
 
-export default function SignDataWithPrivateKey(data, key) {
+function ConvertByteArrayToHexString(bytes) {
+    return forge.util.bytesToHex(bytes);
+}
+
+export function SignDataLocallyWithPrivateKey(data, key) {
     let privateKey = forge.pki.privateKeyFromPem(key);
     let md = forge.md.sha256.create();
     md.update(data);
@@ -11,4 +15,23 @@ export default function SignDataWithPrivateKey(data, key) {
     });
     let sign = privateKey.sign(md, pss);
     return forge.util.bytesToHex(sign);
+}
+
+export default function SignDataWithPrivateKey(data, key) {
+    return new Promise((resolve, reject) => {
+        fetch("/sign", {
+            method: "POST",
+            body: JSON.stringify({
+                key: key,
+                data: ConvertByteArrayToHexString(data),
+            }),
+        })
+        .then(res => {
+            if(res.status===200) {
+                res.json().then(result => resolve(result.signature));
+            } else {
+                res.text().then(err => reject(err));
+            }
+        })
+    });
 }

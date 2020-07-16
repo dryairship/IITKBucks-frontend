@@ -5,7 +5,7 @@ export function ConvertStringToByteArray(str) {
 }
 
 export function ConvertHexStringToByteArray(hex) {
-    return new Uint8Array(forge.util.hexToBytes(hex));
+    return new Uint8Array(hex.match(/.{1,2}/g).map(byte => parseInt(byte, 16)));
 }
 
 export function ConvertInt32ToByteArray (num) {
@@ -52,7 +52,7 @@ export function ConvertOutputsToByteArray(outputs) {
 }
 
 export function ConvertInputToByteArray(input) {
-    let part1 = ConvertHexStringToByteArray(input.transactionID);
+    let part1 = ConvertHexStringToByteArray(input.transactionId);
     let part2 = ConvertInt32ToByteArray(input.index);
     let ans = new Uint8Array(36);
     ans.set(part1);
